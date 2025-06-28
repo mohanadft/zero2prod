@@ -19,13 +19,27 @@ jobs:
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - name: Enforce formatting
-        run: cargo fmt --check
+      - name: Format code
+        run: cargo fmt
+      - name: Commit and push changes
+        run: |
+          if [[ `git status --porcelain` ]]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git commit -am "chore: auto-format code"
+            git push
+          else
+            echo "No formatting changes needed"
+          fi
+
 
   clippy:
     name: Clippy
